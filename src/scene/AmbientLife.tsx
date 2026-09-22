@@ -1,27 +1,47 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { DISTRICTS } from "../data/districts";
+import { PLACES } from "../data/places";
 import { useStore } from "../store/useStore";
 import { Toon } from "./Toon";
 import { Creature } from "./Creature";
 import { Birds } from "./Birds";
 
-const WORLD_RADIUS = 38;
-const EXCLUSION = 6.5;
+const BOUNDS = { xMin: -30, xMax: 82, zMin: -42, zMax: 58 };
+const PLACE_CLEARANCE = 8;
+const ROAD_CLEARANCE = 3.6;
+
+function distanceToSegment(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
+  const abx = bx - ax;
+  const abz = bz - az;
+  const lenSq = abx * abx + abz * abz || 1;
+  let t = ((px - ax) * abx + (pz - az) * abz) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + abx * t;
+  const cz = az + abz * t;
+  return Math.hypot(px - cx, pz - cz);
+}
 
 function randomPoint(rng: () => number): [number, number] {
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const angle = rng() * Math.PI * 2;
-    const r = Math.sqrt(rng()) * WORLD_RADIUS;
-    const x = Math.cos(angle) * r;
-    const z = Math.sin(angle) * r;
-    const tooClose = DISTRICTS.some(
-      (d) => Math.hypot(x - d.position[0], z - d.position[1]) < EXCLUSION
-    ) || Math.hypot(x, z) < EXCLUSION;
-    if (!tooClose) return [x, z];
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const x = BOUNDS.xMin + rng() * (BOUNDS.xMax - BOUNDS.xMin);
+    const z = BOUNDS.zMin + rng() * (BOUNDS.zMax - BOUNDS.zMin);
+    const nearPlace = PLACES.some(
+      (p) => Math.hypot(x - p.position[0], z - p.position[1]) < PLACE_CLEARANCE
+    );
+    if (nearPlace) continue;
+    let nearRoad = false;
+    for (let i = 0; i < PLACES.length - 1; i++) {
+      const [ax, az] = PLACES[i].position;
+      const [bx, bz] = PLACES[i + 1].position;
+      if (distanceToSegment(x, z, ax, az, bx, bz) < ROAD_CLEARANCE) {
+        nearRoad = true;
+        break;
+      }
+    }
+    if (!nearRoad) return [x, z];
   }
-  return [0, 0];
+  return [BOUNDS.xMin, BOUNDS.zMin];
 }
 
 function mulberry32(seed: number) {
@@ -37,13 +57,15 @@ function mulberry32(seed: number) {
 export function AmbientLife() {
   const quality = useStore((s) => s.settings.quality);
   const reducedMotion = useStore((s) => s.settings.reducedMotion);
-  const treeCount = quality === "high" ? 90 : 40;
+  const treeCount = quality === "high" ? 130 : 55;
   const moteCount = quality === "high" ? 60 : 0;
-  const grassCount = quality === "high" ? 240 : 60;
+  const grassCount = quality === "high" ? 320 : 80;
   const leafCount = quality === "high" ? 36 : 0;
 
   const treeRef = useRef<THREE.InstancedMesh>(null);
-  const foliageRef = useRef<THREE.InstancedMesh>(null);
+  const canopyLowRef = useRef<THREE.InstancedMesh>(null);
+  const canopyMidRef = useRef<THREE.InstancedMesh>(null);
+  const canopyTopRef = useRef<THREE.InstancedMesh>(null);
   const motesRef = useRef<THREE.InstancedMesh>(null);
   const grassRef = useRef<THREE.InstancedMesh>(null);
   const leavesRef = useRef<THREE.InstancedMesh>(null);
@@ -74,8 +96,8 @@ export function AmbientLife() {
   const leaves = useMemo(() => {
     const rng = mulberry32(777);
     return new Array(leafCount).fill(0).map(() => ({
-      x: (rng() - 0.5) * 64,
-      z: (rng() - 0.5) * 64,
+      x: BOUNDS.xMin + rng() * (BOUNDS.xMax - BOUNDS.xMin),
+      z: BOUNDS.zMin + rng() * (BOUNDS.zMax - BOUNDS.zMin),
       y: rng() * 5 + 2,
       speed: 0.15 + rng() * 0.2,
       phase: rng() * Math.PI * 2,
@@ -86,8 +108,8 @@ export function AmbientLife() {
   const motes = useMemo(() => {
     const rng = mulberry32(99);
     return new Array(moteCount).fill(0).map(() => ({
-      x: (rng() - 0.5) * 60,
-      z: (rng() - 0.5) * 60,
+      x: BOUNDS.xMin + rng() * (BOUNDS.xMax - BOUNDS.xMin),
+      z: BOUNDS.zMin + rng() * (BOUNDS.zMax - BOUNDS.zMin),
       y: rng() * 4 + 0.5,
       speed: 0.2 + rng() * 0.3,
       phase: rng() * Math.PI * 2,
@@ -103,12 +125,27 @@ export function AmbientLife() {
       dummy.scale.setScalar(t.scale);
       dummy.updateMatrix();
       treeRef.current?.setMatrixAt(i, dummy.matrix);
-      dummy.position.set(t.x, 1.6 * t.scale, t.z);
+
+      // layered canopy: three overlapping, tapering blobs instead of one cone
+      dummy.position.set(t.x, 1.55 * t.scale, t.z);
+      dummy.scale.setScalar(t.scale * 1.05);
       dummy.updateMatrix();
-      foliageRef.current?.setMatrixAt(i, dummy.matrix);
+      canopyLowRef.current?.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(t.x + Math.sin(i) * 0.15 * t.scale, 2.15 * t.scale, t.z + Math.cos(i) * 0.15 * t.scale);
+      dummy.scale.setScalar(t.scale * 0.82);
+      dummy.updateMatrix();
+      canopyMidRef.current?.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(t.x, 2.65 * t.scale, t.z);
+      dummy.scale.setScalar(t.scale * 0.58);
+      dummy.updateMatrix();
+      canopyTopRef.current?.setMatrixAt(i, dummy.matrix);
     });
     treeRef.current && (treeRef.current.instanceMatrix.needsUpdate = true);
-    foliageRef.current && (foliageRef.current.instanceMatrix.needsUpdate = true);
+    canopyLowRef.current && (canopyLowRef.current.instanceMatrix.needsUpdate = true);
+    canopyMidRef.current && (canopyMidRef.current.instanceMatrix.needsUpdate = true);
+    canopyTopRef.current && (canopyTopRef.current.instanceMatrix.needsUpdate = true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trees]);
 
@@ -161,9 +198,17 @@ export function AmbientLife() {
         <cylinderGeometry args={[0.12, 0.18, 1.6, 6]} />
         <Toon color="#7a5a3c" />
       </instancedMesh>
-      <instancedMesh ref={foliageRef} args={[undefined, undefined, treeCount]} castShadow>
-        <coneGeometry args={[1.1, 2, 7]} />
+      <instancedMesh ref={canopyLowRef} args={[undefined, undefined, treeCount]} castShadow>
+        <sphereGeometry args={[1.15, 8, 7]} />
+        <Toon color="#4f7f52" />
+      </instancedMesh>
+      <instancedMesh ref={canopyMidRef} args={[undefined, undefined, treeCount]} castShadow>
+        <sphereGeometry args={[1.0, 8, 7]} />
         <Toon color="#5f8f5a" />
+      </instancedMesh>
+      <instancedMesh ref={canopyTopRef} args={[undefined, undefined, treeCount]} castShadow>
+        <sphereGeometry args={[0.85, 8, 7]} />
+        <Toon color="#77a56a" />
       </instancedMesh>
       {grassCount > 0 && (
         <instancedMesh ref={grassRef} args={[undefined, undefined, grassCount]}>
@@ -189,8 +234,8 @@ export function AmbientLife() {
         </instancedMesh>
       )}
       {quality === "high" && <Birds count={6} />}
-      <Creature position={[10.5, -14.5]} />
-      <Creature position={[-14, 21.5]} />
+      <Creature position={[-10, 8]} />
+      <Creature position={[38, 26]} />
     </group>
   );
 }

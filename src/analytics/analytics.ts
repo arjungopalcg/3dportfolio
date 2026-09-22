@@ -10,9 +10,9 @@
 
 export type AnalyticsEvent =
   | { name: "session_start" }
-  | { name: "district_visited"; districtId: string }
-  | { name: "panel_open"; districtId: string }
-  | { name: "cta_click"; target: "cv" | "linkedin" | "email" | "district_link" }
+  | { name: "place_visited"; placeId: string }
+  | { name: "panel_open"; placeId: string }
+  | { name: "cta_click"; target: "cv" | "linkedin" | "email" | "place_link" }
   | { name: "fallback_view_used" }
   | { name: "session_end"; durationSeconds: number };
 

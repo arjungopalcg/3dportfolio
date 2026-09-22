@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { DISTRICTS, HUB } from "../data/districts";
+import { PLACES, CONTACT_LINKS } from "../data/places";
 import { setDocumentMeta, resetDocumentMeta } from "../utils/documentMeta";
 import { trackEvent } from "../analytics/analytics";
 
 export function FallbackView() {
   useEffect(() => {
-    setDocumentMeta("List view", HUB.bio[0]);
+    setDocumentMeta("List view", PLACES[0].personalNote);
     trackEvent({ name: "fallback_view_used" });
     return () => resetDocumentMeta();
   }, []);
@@ -24,47 +24,63 @@ export function FallbackView() {
       </header>
 
       <section aria-labelledby="about-heading">
-        <h2 id="about-heading">{HUB.name}</h2>
-        {HUB.bio.map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
+        <h2 id="about-heading">A road through the places I've lived and worked</h2>
+        <p>
+          Seven stops, roughly in order: hometown, university, and every place work has taken
+          me since — ending up at home right now in Basildon.
+        </p>
       </section>
 
-      {DISTRICTS.map((d) => (
-        <section key={d.id} id={d.id} aria-labelledby={`${d.id}-heading`} className="fallback-section">
-          <p className="panel-eyebrow">{d.represents}</p>
-          <h2 id={`${d.id}-heading`} style={{ color: d.color }}>
-            {d.name}
+      {PLACES.map((p) => (
+        <section key={p.id} id={p.id} aria-labelledby={`${p.id}-heading`} className="fallback-section">
+          <p className="panel-eyebrow">{p.tagline}</p>
+          <h2 id={`${p.id}-heading`} style={{ color: p.color }}>
+            {p.name}
           </h2>
-          <p className="panel-subtitle">{d.subtitle}</p>
-          {d.content.map((line, i) => (
-            <p key={i}>{line}</p>
+          <p>{p.personalNote}</p>
+          {p.roles.map((role) => (
+            <div key={role.company + role.title} style={{ marginTop: 14 }}>
+              <p className="panel-subtitle">
+                {role.title} · {role.company} · {role.period}
+              </p>
+              <ul>
+                {role.bullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+            </div>
           ))}
           <div className="fallback-links">
-            {d.links?.map((link) => (
-              <a
-                key={link.href + link.label}
-                href={link.href}
-                target={link.href.startsWith("http") ? "_blank" : undefined}
-                rel="noreferrer"
-                onClick={() =>
-                  trackEvent({
-                    name: "cta_click",
-                    target: link.href.startsWith("mailto:")
-                      ? "email"
-                      : link.href.includes("linkedin")
-                        ? "linkedin"
-                        : "cv",
-                  })
-                }
-              >
-                {link.label}
-              </a>
-            ))}
-            <Link to={`/world/${d.id}`}>Visit in 3D →</Link>
+            <Link to={`/world/${p.id}`}>Visit in 3D →</Link>
           </div>
         </section>
       ))}
+
+      <section className="fallback-section" aria-labelledby="contact-heading">
+        <h2 id="contact-heading">Get in touch</h2>
+        <div className="fallback-links">
+          <a
+            href={CONTACT_LINKS.cv.href}
+            onClick={() => trackEvent({ name: "cta_click", target: "cv" })}
+          >
+            {CONTACT_LINKS.cv.label}
+          </a>
+          <a
+            href={CONTACT_LINKS.email.href}
+            onClick={() => trackEvent({ name: "cta_click", target: "email" })}
+          >
+            {CONTACT_LINKS.email.label}
+          </a>
+          <a
+            href={CONTACT_LINKS.linkedin.href}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => trackEvent({ name: "cta_click", target: "linkedin" })}
+          >
+            {CONTACT_LINKS.linkedin.label}
+          </a>
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { districtById } from "../data/districts";
+import { CONTACT_LINKS } from "../data/places";
 import { useStore } from "../store/useStore";
 import { Minimap } from "./Minimap";
 import { SettingsPanel } from "./SettingsPanel";
@@ -9,7 +9,6 @@ export function HUD() {
   const muted = useStore((s) => s.settings.muted);
   const toggleMuted = useStore((s) => s.toggleMuted);
   const toggleSettings = useStore((s) => s.toggleSettings);
-  const contact = districtById("contact");
 
   return (
     <>
@@ -19,18 +18,16 @@ export function HUD() {
           <span className="hud-subtitle">an explorable portfolio</span>
         </div>
         <div className="hud-actions">
-          {contact?.links?.[0] && (
-            <a
-              className="hud-cta"
-              href={contact.links[0].href}
-              onClick={() => trackEvent({ name: "cta_click", target: "cv" })}
-            >
-              {contact.links[0].label}
-            </a>
-          )}
+          <a
+            className="hud-cta"
+            href={CONTACT_LINKS.cv.href}
+            onClick={() => trackEvent({ name: "cta_click", target: "cv" })}
+          >
+            {CONTACT_LINKS.cv.label}
+          </a>
           <a
             className="hud-cta secondary"
-            href="https://www.linkedin.com"
+            href={CONTACT_LINKS.linkedin.href}
             target="_blank"
             rel="noreferrer"
             onClick={() => trackEvent({ name: "cta_click", target: "linkedin" })}

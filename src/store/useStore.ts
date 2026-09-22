@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Vec2 } from "../data/districts";
+import type { Vec2 } from "../data/places";
 import type { LightingMode } from "../scene/dayCycle";
 import { detectQuality } from "../utils/deviceQuality";
 import { setAmbientMuted } from "../audio/ambientAudio";
@@ -27,8 +27,8 @@ interface AppState {
   openPanel: (id: string) => void;
   closePanel: () => void;
 
-  nearbyDistrict: string | null;
-  setNearbyDistrict: (id: string | null) => void;
+  nearbyPlace: string | null;
+  setNearbyPlace: (id: string | null) => void;
 
   visited: Set<string>;
   markVisited: (id: string) => void;
@@ -82,19 +82,19 @@ export const useStore = create<AppState>((set) => ({
 
   activePanel: null,
   openPanel: (id) => {
-    trackEvent({ name: "panel_open", districtId: id });
+    trackEvent({ name: "panel_open", placeId: id });
     set({ activePanel: id });
   },
   closePanel: () => set({ activePanel: null }),
 
-  nearbyDistrict: null,
-  setNearbyDistrict: (id) => set({ nearbyDistrict: id }),
+  nearbyPlace: null,
+  setNearbyPlace: (id) => set({ nearbyPlace: id }),
 
   visited: new Set<string>(),
   markVisited: (id) =>
     set((s) => {
       if (s.visited.has(id)) return {};
-      trackEvent({ name: "district_visited", districtId: id });
+      trackEvent({ name: "place_visited", placeId: id });
       const next = new Set(s.visited);
       next.add(id);
       return { visited: next };

@@ -1,16 +1,19 @@
 import { useEffect, useRef } from "react";
-import { WORLD_POINTS, approachPoint } from "../data/districts";
+import { PLACES, approachPoint } from "../data/places";
 import { useStore } from "../store/useStore";
 import { playerWorld } from "../scene/playerPosition";
 
-const WORLD_RADIUS = 30; // matches spread of district positions
 const MAP_SIZE = 168;
+const BOUNDS = { xMin: -14, xMax: 58, zMin: -27, zMax: 42 };
+const PADDING = 10;
 
 function worldToMap(x: number, z: number) {
-  const scale = MAP_SIZE / 2 / WORLD_RADIUS;
+  const spanX = BOUNDS.xMax - BOUNDS.xMin + PADDING * 2;
+  const spanZ = BOUNDS.zMax - BOUNDS.zMin + PADDING * 2;
+  const scale = MAP_SIZE / Math.max(spanX, spanZ);
   return {
-    left: MAP_SIZE / 2 + x * scale,
-    top: MAP_SIZE / 2 + z * scale,
+    left: (x - BOUNDS.xMin + PADDING) * scale,
+    top: (z - BOUNDS.zMin + PADDING) * scale,
   };
 }
 
@@ -55,17 +58,16 @@ export function Minimap() {
         ×
       </button>
       <div className="minimap-canvas" style={{ width: MAP_SIZE, height: MAP_SIZE }}>
-        {WORLD_POINTS.map((d) => {
-          const pos = worldToMap(d.position[0], d.position[1]);
-          const seen = visited.has(d.id);
-          const [tx, tz] = approachPoint(d);
-          const isHub = d.shape === "hub";
+        {PLACES.map((p, i) => {
+          const pos = worldToMap(p.position[0], p.position[1]);
+          const seen = visited.has(p.id);
+          const [tx, tz] = approachPoint(p, i);
           return (
             <button
-              key={d.id}
-              className={`minimap-dot${seen ? " visited" : ""}${isHub ? " hub" : ""}`}
-              style={isHub ? pos : { ...pos, background: d.accent, borderColor: d.color }}
-              title={d.name}
+              key={p.id}
+              className={`minimap-dot${seen ? " visited" : ""}`}
+              style={{ ...pos, background: p.accent, borderColor: p.color }}
+              title={p.name}
               onClick={() => fastTravel(tx, tz)}
             />
           );

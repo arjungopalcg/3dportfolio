@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { input } from "../input/inputState";
 import { useStore } from "../store/useStore";
-import { DISTRICTS } from "../data/districts";
+import { PLACES } from "../data/places";
 
 export function isTouchDevice(): boolean {
   if (typeof window === "undefined") return false;
@@ -16,7 +16,7 @@ export function MobileControls() {
   const touchId = useRef<number | null>(null);
   const origin = useRef({ x: 0, y: 0 });
   const [active, setActive] = useState(false);
-  const nearbyDistrict = useStore((s) => s.nearbyDistrict);
+  const nearbyPlace = useStore((s) => s.nearbyPlace);
   const openPanel = useStore((s) => s.openPanel);
   const markVisited = useStore((s) => s.markVisited);
 
@@ -76,9 +76,7 @@ export function MobileControls() {
     };
   }, []);
 
-  const nearbyName = nearbyDistrict
-    ? DISTRICTS.find((d) => d.id === nearbyDistrict)?.name
-    : null;
+  const nearbyName = nearbyPlace ? PLACES.find((p) => p.id === nearbyPlace)?.name : null;
 
   return (
     <>
@@ -89,13 +87,13 @@ export function MobileControls() {
       >
         <div ref={knobRef} className="joystick-knob" />
       </div>
-      {nearbyDistrict && (
+      {nearbyPlace && (
         <button
           className="interact-button"
           onTouchStart={(e) => {
             e.preventDefault();
-            openPanel(nearbyDistrict);
-            markVisited(nearbyDistrict);
+            openPanel(nearbyPlace);
+            markVisited(nearbyPlace);
           }}
         >
           Tap to view
