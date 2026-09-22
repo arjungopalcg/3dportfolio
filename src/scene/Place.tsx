@@ -5,6 +5,8 @@ import { registerCollidable, unregisterCollidable } from "./collidables";
 import { useStore } from "../store/useStore";
 import { Toon, Glow, ToonMesh } from "./Toon";
 import { Label } from "./Label";
+import { Building } from "./Building";
+import { Model } from "./kit/Model";
 
 interface Props {
   place: PlaceData;
@@ -36,6 +38,11 @@ export function PlaceMarker({ place }: Props) {
         <circleGeometry args={[PLAZA_RADIUS, 28]} />
         <Toon color={place.accent} />
       </mesh>
+
+      {/* the place itself */}
+      <group position={[-2.6, 0, -1.8]} scale={2.4}>
+        <Building spec={place.building} />
+      </group>
 
       {/* signpost with the place name */}
       <ToonMesh castShadow position={[0, 1.1, -2.6]} color="#7a5a3c">
@@ -96,6 +103,17 @@ export function PlaceMarker({ place }: Props) {
         <sphereGeometry args={[nearby ? 0.28 : 0.2, 12, 12]} />
         <Glow color={place.accent} intensity={nearby ? 2.2 : 1.1} />
       </mesh>
+
+      {/* small decorative props */}
+      {place.extras?.map((extra, i) => (
+        <Model
+          key={i}
+          url={extra.url}
+          position={[extra.position[0], 0, extra.position[1]]}
+          rotation={[0, extra.rotation ?? 0, 0]}
+          scale={extra.scale ?? 1}
+        />
+      ))}
     </group>
   );
 }

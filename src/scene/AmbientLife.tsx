@@ -1,11 +1,13 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { PLACES } from "../data/places";
 import { useStore } from "../store/useStore";
-import { Toon } from "./Toon";
 import { Creature } from "./Creature";
 import { Birds } from "./Birds";
+import { forest } from "./kit/paths";
+import { Toon } from "./Toon";
 
 const BOUNDS = { xMin: -30, xMax: 82, zMin: -42, zMax: 58 };
 const PLACE_CLEARANCE = 8;
@@ -54,42 +56,85 @@ function mulberry32(seed: number) {
   };
 }
 
+function firstMesh(scene: THREE.Object3D): THREE.Mesh | null {
+  let found: THREE.Mesh | null = null;
+  scene.traverse((obj) => {
+    if (!found && obj instanceof THREE.Mesh) found = obj;
+  });
+  return found;
+}
+
+/** An InstancedMesh built from a loaded Kenney model's geometry+material — real assets, still one draw call. */
+function InstancedModel({
+  url,
+  count,
+  place,
+}: {
+  url: string;
+  count: number;
+  place: (i: number, dummy: THREE.Object3D) => void;
+}) {
+  const { scene } = useGLTF(url);
+  const mesh = useMemo(() => firstMesh(scene), [scene]);
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  useMemo(() => {
+    if (!ref.current) return;
+    for (let i = 0; i < count; i++) {
+      place(i, dummy);
+      dummy.updateMatrix();
+      ref.current.setMatrixAt(i, dummy.matrix);
+    }
+    ref.current.instanceMatrix.needsUpdate = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count, mesh]);
+
+  if (!mesh || count <= 0) return null;
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[mesh.geometry, mesh.material, count]}
+      castShadow
+      receiveShadow
+    />
+  );
+}
+
 export function AmbientLife() {
   const quality = useStore((s) => s.settings.quality);
   const reducedMotion = useStore((s) => s.settings.reducedMotion);
-  const treeCount = quality === "high" ? 130 : 55;
+  const treeCount = quality === "high" ? 70 : 26;
+  const rockCount = quality === "high" ? 22 : 8;
+  const grassCount = quality === "high" ? 260 : 60;
   const moteCount = quality === "high" ? 60 : 0;
-  const grassCount = quality === "high" ? 320 : 80;
   const leafCount = quality === "high" ? 36 : 0;
 
-  const treeRef = useRef<THREE.InstancedMesh>(null);
-  const canopyLowRef = useRef<THREE.InstancedMesh>(null);
-  const canopyMidRef = useRef<THREE.InstancedMesh>(null);
-  const canopyTopRef = useRef<THREE.InstancedMesh>(null);
   const motesRef = useRef<THREE.InstancedMesh>(null);
-  const grassRef = useRef<THREE.InstancedMesh>(null);
   const leavesRef = useRef<THREE.InstancedMesh>(null);
+  const grassRef = useRef<THREE.InstancedMesh>(null);
 
   const trees = useMemo(() => {
     const rng = mulberry32(1337);
     return new Array(treeCount).fill(0).map(() => {
       const [x, z] = randomPoint(rng);
-      const scale = 0.8 + rng() * 0.9;
-      return { x, z, scale, rot: rng() * Math.PI * 2 };
+      return { x, z, scale: 0.8 + rng() * 0.9, rot: rng() * Math.PI * 2 };
     });
   }, [treeCount]);
+
+  const rocks = useMemo(() => {
+    const rng = mulberry32(2468);
+    return new Array(rockCount).fill(0).map(() => {
+      const [x, z] = randomPoint(rng);
+      return { x, z, scale: 0.6 + rng() * 0.8, rot: rng() * Math.PI * 2 };
+    });
+  }, [rockCount]);
 
   const grass = useMemo(() => {
     const rng = mulberry32(4242);
     return new Array(grassCount).fill(0).map(() => {
       const [x, z] = randomPoint(rng);
-      return {
-        x,
-        z,
-        scale: 0.7 + rng() * 0.6,
-        rot: rng() * Math.PI * 2,
-        phase: rng() * Math.PI * 2,
-      };
+      return { x, z, scale: 0.7 + rng() * 0.6, rot: rng() * Math.PI * 2, phase: rng() * Math.PI * 2 };
     });
   }, [grassCount]);
 
@@ -117,37 +162,6 @@ export function AmbientLife() {
   }, [moteCount]);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
-
-  useMemo(() => {
-    trees.forEach((t, i) => {
-      dummy.position.set(t.x, 0, t.z);
-      dummy.rotation.set(0, t.rot, 0);
-      dummy.scale.setScalar(t.scale);
-      dummy.updateMatrix();
-      treeRef.current?.setMatrixAt(i, dummy.matrix);
-
-      // layered canopy: three overlapping, tapering blobs instead of one cone
-      dummy.position.set(t.x, 1.55 * t.scale, t.z);
-      dummy.scale.setScalar(t.scale * 1.05);
-      dummy.updateMatrix();
-      canopyLowRef.current?.setMatrixAt(i, dummy.matrix);
-
-      dummy.position.set(t.x + Math.sin(i) * 0.15 * t.scale, 2.15 * t.scale, t.z + Math.cos(i) * 0.15 * t.scale);
-      dummy.scale.setScalar(t.scale * 0.82);
-      dummy.updateMatrix();
-      canopyMidRef.current?.setMatrixAt(i, dummy.matrix);
-
-      dummy.position.set(t.x, 2.65 * t.scale, t.z);
-      dummy.scale.setScalar(t.scale * 0.58);
-      dummy.updateMatrix();
-      canopyTopRef.current?.setMatrixAt(i, dummy.matrix);
-    });
-    treeRef.current && (treeRef.current.instanceMatrix.needsUpdate = true);
-    canopyLowRef.current && (canopyLowRef.current.instanceMatrix.needsUpdate = true);
-    canopyMidRef.current && (canopyMidRef.current.instanceMatrix.needsUpdate = true);
-    canopyTopRef.current && (canopyTopRef.current.instanceMatrix.needsUpdate = true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trees]);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -192,24 +206,40 @@ export function AmbientLife() {
     }
   });
 
+  const treeSplit = Math.ceil(trees.length / 2);
+
   return (
     <group>
-      <instancedMesh ref={treeRef} args={[undefined, undefined, treeCount]} castShadow>
-        <cylinderGeometry args={[0.12, 0.18, 1.6, 6]} />
-        <Toon color="#7a5a3c" />
-      </instancedMesh>
-      <instancedMesh ref={canopyLowRef} args={[undefined, undefined, treeCount]} castShadow>
-        <sphereGeometry args={[1.15, 8, 7]} />
-        <Toon color="#4f7f52" />
-      </instancedMesh>
-      <instancedMesh ref={canopyMidRef} args={[undefined, undefined, treeCount]} castShadow>
-        <sphereGeometry args={[1.0, 8, 7]} />
-        <Toon color="#5f8f5a" />
-      </instancedMesh>
-      <instancedMesh ref={canopyTopRef} args={[undefined, undefined, treeCount]} castShadow>
-        <sphereGeometry args={[0.85, 8, 7]} />
-        <Toon color="#77a56a" />
-      </instancedMesh>
+      <InstancedModel
+        url={forest("tree")}
+        count={treeSplit}
+        place={(i, d) => {
+          const t = trees[i];
+          d.position.set(t.x, 0, t.z);
+          d.rotation.set(0, t.rot, 0);
+          d.scale.setScalar(t.scale);
+        }}
+      />
+      <InstancedModel
+        url={forest("tree-high")}
+        count={trees.length - treeSplit}
+        place={(i, d) => {
+          const t = trees[i + treeSplit];
+          d.position.set(t.x, 0, t.z);
+          d.rotation.set(0, t.rot, 0);
+          d.scale.setScalar(t.scale);
+        }}
+      />
+      <InstancedModel
+        url={forest("rocks-low")}
+        count={rockCount}
+        place={(i, d) => {
+          const r = rocks[i];
+          d.position.set(r.x, 0, r.z);
+          d.rotation.set(0, r.rot, 0);
+          d.scale.setScalar(r.scale);
+        }}
+      />
       {grassCount > 0 && (
         <instancedMesh ref={grassRef} args={[undefined, undefined, grassCount]}>
           <coneGeometry args={[0.06, 0.45, 3]} />

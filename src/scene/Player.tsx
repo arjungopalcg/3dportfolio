@@ -1,12 +1,13 @@
-import { useRef } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { useGLTF, useAnimations } from "@react-three/drei";
 import * as THREE from "three";
 import { PLACES, SPAWN_POINT } from "../data/places";
 import { useStore } from "../store/useStore";
 import { input, consumeInteract, consumeLook } from "../input/inputState";
 import { collidableMeshes } from "./collidables";
 import { playerWorld } from "./playerPosition";
-import { ToonMesh } from "./Toon";
+import { character } from "./kit/paths";
 
 const WALK_BOUNDS = { xMin: -34, xMax: 86, zMin: -46, zMax: 62 };
 const PLACE_RADIUS = 4.2;
@@ -15,23 +16,40 @@ const INTERACT_RADIUS = 5.5;
 const CAMERA_DISTANCE = 7;
 const CAMERA_HEIGHT = 3.6;
 const MOVE_SPEED = 6.5;
-const WALK_CYCLE_SPEED = 9;
-const MAX_LIMB_SWING = 0.65;
+const CHARACTER_SCALE = 0.5;
+const CHARACTER_URL = character("a");
+
+useGLTF.preload(CHARACTER_URL);
 
 const placeVecs = PLACES.map((p) => new THREE.Vector3(p.position[0], 0, p.position[1]));
 
 export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
   const bodyRef = useRef<THREE.Group>(null);
-  const leftArmRef = useRef<THREE.Group>(null);
-  const rightArmRef = useRef<THREE.Group>(null);
-  const leftLegRef = useRef<THREE.Group>(null);
-  const rightLegRef = useRef<THREE.Group>(null);
+  const characterRef = useRef<THREE.Group>(null);
   const meshYaw = useRef(startYaw);
   const yaw = useRef(startYaw);
   const position = useRef(new THREE.Vector3(SPAWN_POINT[0], 0, SPAWN_POINT[1]));
-  const walkCycle = useRef(0);
   const walkIntensity = useRef(0);
   const { camera, raycaster } = useThree();
+
+  const { scene, animations } = useGLTF(CHARACTER_URL);
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) obj.castShadow = true;
+    });
+    return clone;
+  }, [scene]);
+  const { actions } = useAnimations(animations, characterRef);
+
+  useEffect(() => {
+    const idle = actions.idle;
+    const walk = actions.walk;
+    idle?.reset().play();
+    walk?.reset().play();
+    if (idle) idle.weight = 1;
+    if (walk) walk.weight = 0;
+  }, [actions]);
 
   const openPanel = useStore((s) => s.openPanel);
   const markVisited = useStore((s) => s.markVisited);
@@ -86,20 +104,19 @@ export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
       meshYaw.current = lerpAngle(meshYaw.current, targetMeshYaw, reducedMotion ? 1 : 0.22);
     }
 
-    // Walk-cycle animation
-    walkIntensity.current +=
-      ((moving ? 1 : 0) - walkIntensity.current) * Math.min(1, dt * 8);
-    if (moving) walkCycle.current += dt * WALK_CYCLE_SPEED;
-    const swing = reducedMotion ? 0 : Math.sin(walkCycle.current) * MAX_LIMB_SWING * walkIntensity.current;
-    if (leftArmRef.current) leftArmRef.current.rotation.x = -swing;
-    if (rightArmRef.current) rightArmRef.current.rotation.x = swing;
-    if (leftLegRef.current) leftLegRef.current.rotation.x = swing;
-    if (rightLegRef.current) rightLegRef.current.rotation.x = -swing;
+    // Crossfade idle <-> walk animation weights
+    walkIntensity.current += ((moving ? 1 : 0) - walkIntensity.current) * Math.min(1, dt * 8);
+    const idle = actions.idle;
+    const walk = actions.walk;
+    if (idle && walk) {
+      const w = reducedMotion ? (moving ? 1 : 0) : walkIntensity.current;
+      idle.weight = 1 - w;
+      walk.weight = w;
+    }
 
     if (bodyRef.current) {
       bodyRef.current.position.set(position.current.x, 0, position.current.z);
       bodyRef.current.rotation.y = meshYaw.current;
-      bodyRef.current.position.y = reducedMotion ? 0 : Math.abs(Math.sin(walkCycle.current * 2)) * 0.05 * walkIntensity.current;
     }
     playerWorld.x = position.current.x;
     playerWorld.z = position.current.z;
@@ -160,62 +177,8 @@ export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
 
   return (
     <group ref={bodyRef}>
-      {/* torso — red jacket */}
-      <ToonMesh castShadow position={[0, 1.02, 0]} color="#c9433f">
-        <capsuleGeometry args={[0.26, 0.5, 4, 8]} />
-      </ToonMesh>
-      {/* skirt */}
-      <ToonMesh castShadow position={[0, 0.62, 0]} color="#2a2420">
-        <coneGeometry args={[0.32, 0.42, 10]} />
-      </ToonMesh>
-      {/* head */}
-      <ToonMesh castShadow position={[0, 1.62, 0]} color="#f2c9a0">
-        <sphereGeometry args={[0.24, 12, 10]} />
-      </ToonMesh>
-      {/* hair */}
-      <ToonMesh castShadow position={[0, 1.68, -0.02]} color="#2e2420">
-        <sphereGeometry args={[0.27, 12, 10]} />
-      </ToonMesh>
-      <ToonMesh castShadow position={[0, 1.55, 0.2]} color="#f2c9a0">
-        <sphereGeometry args={[0.2, 10, 8]} />
-      </ToonMesh>
-
-      {/* left arm (shoulder pivot) */}
-      <group ref={leftArmRef} position={[-0.32, 1.3, 0]}>
-        <ToonMesh castShadow position={[0, -0.26, 0]} color="#c9433f">
-          <cylinderGeometry args={[0.07, 0.08, 0.5, 6]} />
-        </ToonMesh>
-        <ToonMesh castShadow position={[0, -0.54, 0]} color="#f2c9a0">
-          <sphereGeometry args={[0.08, 8, 8]} />
-        </ToonMesh>
-      </group>
-      {/* right arm */}
-      <group ref={rightArmRef} position={[0.32, 1.3, 0]}>
-        <ToonMesh castShadow position={[0, -0.26, 0]} color="#c9433f">
-          <cylinderGeometry args={[0.07, 0.08, 0.5, 6]} />
-        </ToonMesh>
-        <ToonMesh castShadow position={[0, -0.54, 0]} color="#f2c9a0">
-          <sphereGeometry args={[0.08, 8, 8]} />
-        </ToonMesh>
-      </group>
-
-      {/* left leg (hip pivot) */}
-      <group ref={leftLegRef} position={[-0.14, 0.5, 0]}>
-        <ToonMesh castShadow position={[0, -0.28, 0]} color="#2a2420">
-          <cylinderGeometry args={[0.09, 0.09, 0.56, 6]} />
-        </ToonMesh>
-        <ToonMesh castShadow position={[0, -0.58, 0.06]} color="#1c1815">
-          <boxGeometry args={[0.14, 0.1, 0.24]} />
-        </ToonMesh>
-      </group>
-      {/* right leg */}
-      <group ref={rightLegRef} position={[0.14, 0.5, 0]}>
-        <ToonMesh castShadow position={[0, -0.28, 0]} color="#2a2420">
-          <cylinderGeometry args={[0.09, 0.09, 0.56, 6]} />
-        </ToonMesh>
-        <ToonMesh castShadow position={[0, -0.58, 0.06]} color="#1c1815">
-          <boxGeometry args={[0.14, 0.1, 0.24]} />
-        </ToonMesh>
+      <group ref={characterRef} scale={CHARACTER_SCALE}>
+        <primitive object={clonedScene} />
       </group>
     </group>
   );

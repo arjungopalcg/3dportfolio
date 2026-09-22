@@ -11,6 +11,25 @@ export interface WallItem {
   caption: string;
 }
 
+export interface BuildingSpec {
+  /** "hut": 4 walls + roof assembled from the fantasy-town kit. "landmark": one standalone model. */
+  kind: "hut" | "landmark" | "camp" | "industrial";
+  wall?: string; // fantasy-town model name, e.g. "wall" | "wall-wood" | "wall-arch"
+  door?: string; // e.g. "wall-door" | "wall-wood-door"
+  roof?: string; // e.g. "roof-gable" | "roof-high-gable" | "roof-point" | "roof-high"
+  chimneyCount?: number;
+  banner?: boolean;
+  landmarkModel?: string; // for kind: "landmark"
+  scale?: number;
+}
+
+export interface Extra {
+  url: string; // full path, e.g. from kit/paths.ts helpers
+  position: Vec2;
+  rotation?: number;
+  scale?: number;
+}
+
 export interface Place {
   id: string;
   name: string;
@@ -21,6 +40,8 @@ export interface Place {
   wallItems: WallItem[]; // photo/memory placeholders shown on the in-world wall
   color: string;
   accent: string;
+  building: BuildingSpec;
+  extras?: Extra[]; // small decorative props scattered near the plaza
 }
 
 export const PLACES: Place[] = [
@@ -35,6 +56,7 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "Growing up in Thrissur" }, { caption: "Family & home" }],
     color: "#c9a37a",
     accent: "#f2d9a8",
+    building: { kind: "hut", wall: "wall", door: "wall-door", roof: "roof-gable", chimneyCount: 1 },
   },
   {
     id: "coimbatore",
@@ -47,6 +69,7 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "Campus days" }, { caption: "First time away from home" }],
     color: "#8f8f78",
     accent: "#d8d3b0",
+    building: { kind: "hut", wall: "wall-wood", door: "wall-wood-door", roof: "roof-high-gable" },
   },
   {
     id: "doha",
@@ -66,6 +89,7 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "First job, first city abroad" }],
     color: "#b5533f",
     accent: "#f4b79f",
+    building: { kind: "camp", scale: 0.55 },
   },
   {
     id: "bangalore",
@@ -100,6 +124,7 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "Akme Technologies" }, { caption: "QuEST / Rolls-Royce ODC" }],
     color: "#6f8598",
     accent: "#bcd4e6",
+    building: { kind: "industrial", landmarkModel: "building-a", chimneyCount: 2, scale: 0.55 },
   },
   {
     id: "colchester",
@@ -112,6 +137,7 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "Masters, and a move to the UK" }],
     color: "#7d6fa8",
     accent: "#d7cdf2",
+    building: { kind: "hut", wall: "wall-arch", door: "wall-doorway-round", roof: "roof-point" },
   },
   {
     id: "kochi",
@@ -136,6 +162,7 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "Building OnCloud from zero" }, { caption: "The team" }],
     color: "#4f9d6e",
     accent: "#bdeecb",
+    building: { kind: "landmark", landmarkModel: "windmill", scale: 0.5 },
   },
   {
     id: "basildon",
@@ -170,6 +197,15 @@ export const PLACES: Place[] = [
     wallItems: [{ caption: "Ascent AI Labs" }, { caption: "Tempest Photography" }],
     color: "#a3714f",
     accent: "#e7b98a",
+    building: {
+      kind: "hut",
+      wall: "wall-wood",
+      door: "wall-wood-door",
+      roof: "roof-gable",
+      chimneyCount: 1,
+      banner: true,
+    },
+    extras: [{ url: "/models/car-kit/sedan.glb", position: [2.6, -1.2], rotation: 0.4, scale: 0.9 }],
   },
 ];
 
