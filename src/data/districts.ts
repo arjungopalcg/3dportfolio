@@ -15,7 +15,22 @@ export interface District {
   position: Vec2;
   color: string;
   accent: string;
-  shape: "tower" | "barn" | "hangar" | "warehouse" | "ledger" | "grove" | "garden" | "signpost";
+  shape:
+    | "tower"
+    | "barn"
+    | "hangar"
+    | "warehouse"
+    | "ledger"
+    | "grove"
+    | "garden"
+    | "signpost"
+    | "hub";
+  /** Overrides the default building collision radius (used by the hub's thin lantern post). */
+  collisionRadius?: number;
+  /** Overrides the default ground-plaza radius under the structure. */
+  plazaRadius?: number;
+  /** Overrides the computed approach point for fast-travel/deep-linking. */
+  landingPoint?: Vec2;
 }
 
 export const HUB = {
@@ -24,6 +39,21 @@ export const HUB = {
     "Arjun Gopal C G — Product manager who builds with AI-assisted tools (Claude Code, Cursor, Lovable, Google AI Studio) to move from idea to working software fast.",
     "This world is itself a demonstration of that approach: an explorable 3D portfolio instead of a static page. Walk into any building to read that chapter of the story, or use the Signpost for contact details.",
   ],
+};
+
+export const HUB_DISTRICT: District = {
+  id: "hub",
+  name: HUB.name,
+  subtitle: "Start here",
+  represents: "Welcome",
+  content: HUB.bio,
+  position: [0, 0],
+  color: "#8a6a45",
+  accent: "#f4b79f",
+  shape: "hub",
+  collisionRadius: 0.6,
+  plazaRadius: 6,
+  landingPoint: [0, 8],
 };
 
 export const DISTRICTS: District[] = [
@@ -148,12 +178,16 @@ export const DISTRICTS: District[] = [
   },
 ];
 
+/** All walkable points of interest: the hub plus every career/project district. */
+export const WORLD_POINTS: District[] = [HUB_DISTRICT, ...DISTRICTS];
+
 export function districtById(id: string): District | undefined {
-  return DISTRICTS.find((d) => d.id === id);
+  return WORLD_POINTS.find((d) => d.id === id);
 }
 
 /** A landing spot just outside a district's building, safely inside the interact radius. */
 export function approachPoint(district: District): Vec2 {
+  if (district.landingPoint) return district.landingPoint;
   const [x, z] = district.position;
   const len = Math.hypot(x, z) || 1;
   const offset = 4.3;

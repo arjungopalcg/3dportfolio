@@ -1,19 +1,27 @@
 import { create } from "zustand";
 import type { Vec2 } from "../data/districts";
+import type { LightingMode } from "../scene/dayCycle";
+import { detectQuality } from "../utils/deviceQuality";
+import { setAmbientMuted } from "../audio/ambientAudio";
+import { trackEvent } from "../analytics/analytics";
 
 export type QualityTier = "high" | "low";
+export type QualityMode = "auto" | QualityTier;
 
 interface Settings {
   reducedMotion: boolean;
   muted: boolean;
   quality: QualityTier;
+  qualityMode: QualityMode;
+  lightingMode: LightingMode;
 }
 
 interface AppState {
   settings: Settings;
   setReducedMotion: (v: boolean) => void;
   toggleMuted: () => void;
-  setQuality: (q: QualityTier) => void;
+  setQualityMode: (mode: QualityMode) => void;
+  setLightingMode: (mode: LightingMode) => void;
 
   activePanel: string | null;
   openPanel: (id: string) => void;
@@ -34,6 +42,10 @@ interface AppState {
 
   hintsDismissed: boolean;
   dismissHints: () => void;
+  resetHints: () => void;
+
+  settingsOpen: boolean;
+  toggleSettings: () => void;
 }
 
 const prefersReducedMotion =
@@ -45,16 +57,34 @@ export const useStore = create<AppState>((set) => ({
   settings: {
     reducedMotion: prefersReducedMotion,
     muted: true,
-    quality: "high",
+    quality: detectQuality(),
+    qualityMode: "auto",
+    lightingMode: "auto",
   },
   setReducedMotion: (v) =>
     set((s) => ({ settings: { ...s.settings, reducedMotion: v } })),
   toggleMuted: () =>
-    set((s) => ({ settings: { ...s.settings, muted: !s.settings.muted } })),
-  setQuality: (q) => set((s) => ({ settings: { ...s.settings, quality: q } })),
+    set((s) => {
+      const muted = !s.settings.muted;
+      setAmbientMuted(muted);
+      return { settings: { ...s.settings, muted } };
+    }),
+  setQualityMode: (mode) =>
+    set((s) => ({
+      settings: {
+        ...s.settings,
+        qualityMode: mode,
+        quality: mode === "auto" ? detectQuality() : mode,
+      },
+    })),
+  setLightingMode: (mode) =>
+    set((s) => ({ settings: { ...s.settings, lightingMode: mode } })),
 
   activePanel: null,
-  openPanel: (id) => set({ activePanel: id }),
+  openPanel: (id) => {
+    trackEvent({ name: "panel_open", districtId: id });
+    set({ activePanel: id });
+  },
   closePanel: () => set({ activePanel: null }),
 
   nearbyDistrict: null,
@@ -63,6 +93,8 @@ export const useStore = create<AppState>((set) => ({
   visited: new Set<string>(),
   markVisited: (id) =>
     set((s) => {
+      if (s.visited.has(id)) return {};
+      trackEvent({ name: "district_visited", districtId: id });
       const next = new Set(s.visited);
       next.add(id);
       return { visited: next };
@@ -77,4 +109,8 @@ export const useStore = create<AppState>((set) => ({
 
   hintsDismissed: false,
   dismissHints: () => set({ hintsDismissed: true }),
+  resetHints: () => set({ hintsDismissed: false }),
+
+  settingsOpen: false,
+  toggleSettings: () => set((s) => ({ settingsOpen: !s.settingsOpen })),
 }));

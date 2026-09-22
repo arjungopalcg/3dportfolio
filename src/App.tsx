@@ -1,11 +1,14 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Experience } from "./ui/Experience";
 import { FallbackView } from "./ui/FallbackView";
 import { hasWebGL2 } from "./utils/webgl";
+import { startSessionTracking } from "./analytics/analytics";
 
 export default function App() {
   const webglOk = useMemo(() => hasWebGL2(), []);
+
+  useEffect(() => startSessionTracking(), []);
 
   return (
     <BrowserRouter>

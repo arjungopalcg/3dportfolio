@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { DISTRICTS, approachPoint } from "../data/districts";
+import { WORLD_POINTS, approachPoint } from "../data/districts";
 import { useStore } from "../store/useStore";
 import { playerWorld } from "../scene/playerPosition";
 
@@ -55,21 +55,16 @@ export function Minimap() {
         ×
       </button>
       <div className="minimap-canvas" style={{ width: MAP_SIZE, height: MAP_SIZE }}>
-        <button
-          className="minimap-dot hub"
-          style={worldToMap(0, 0)}
-          title="Village Square"
-          onClick={() => fastTravel(0, 8)}
-        />
-        {DISTRICTS.map((d) => {
+        {WORLD_POINTS.map((d) => {
           const pos = worldToMap(d.position[0], d.position[1]);
           const seen = visited.has(d.id);
           const [tx, tz] = approachPoint(d);
+          const isHub = d.shape === "hub";
           return (
             <button
               key={d.id}
-              className={`minimap-dot${seen ? " visited" : ""}`}
-              style={{ ...pos, background: d.accent, borderColor: d.color }}
+              className={`minimap-dot${seen ? " visited" : ""}${isHub ? " hub" : ""}`}
+              style={isHub ? pos : { ...pos, background: d.accent, borderColor: d.color }}
               title={d.name}
               onClick={() => fastTravel(tx, tz)}
             />

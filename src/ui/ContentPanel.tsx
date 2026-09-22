@@ -1,18 +1,27 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { districtById } from "../data/districts";
 import { useStore } from "../store/useStore";
+import { setDocumentMeta, resetDocumentMeta } from "../utils/documentMeta";
+import { trackEvent } from "../analytics/analytics";
 
 export function ContentPanel() {
   const activePanel = useStore((s) => s.activePanel);
   const closePanel = useStore((s) => s.closePanel);
   const navigate = useNavigate();
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const [copied, setCopied] = useState(false);
 
   const district = activePanel ? districtById(activePanel) : null;
 
   useEffect(() => {
-    if (district) closeBtnRef.current?.focus();
+    if (district) {
+      closeBtnRef.current?.focus();
+      setDocumentMeta(district.name, district.content[0]);
+      setCopied(false);
+    } else {
+      resetDocumentMeta();
+    }
   }, [district]);
 
   useEffect(() => {
@@ -32,6 +41,18 @@ export function ContentPanel() {
     navigate("/", { replace: true });
   }
 
+  async function handleCopyLink() {
+    const url = `${window.location.origin}/world/${district!.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      trackEvent({ name: "cta_click", target: "district_link" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard API unavailable — the URL is still visible/shareable from the address bar via /world/:id
+    }
+  }
+
   return (
     <div className="panel-overlay" role="dialog" aria-modal="true" aria-labelledby="panel-title">
       <div className="panel" style={{ borderColor: district.accent }}>
@@ -48,22 +69,32 @@ export function ContentPanel() {
             <p key={i}>{line}</p>
           ))}
         </div>
-        {district.links && district.links.length > 0 && (
-          <div className="panel-links">
-            {district.links.map((link) => (
-              <a
-                key={link.href + link.label}
-                href={link.href}
-                target={link.href.startsWith("http") ? "_blank" : undefined}
-                rel="noreferrer"
-                className="panel-link"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-        )}
+        <div className="panel-links">
+          {district.links?.map((link) => (
+            <a
+              key={link.href + link.label}
+              href={link.href}
+              target={link.href.startsWith("http") ? "_blank" : undefined}
+              rel="noreferrer"
+              className="panel-link"
+              onClick={() => trackEvent({ name: "cta_click", target: ctaTarget(link.href) })}
+            >
+              {link.label}
+            </a>
+          ))}
+          {district.id !== "hub" && (
+            <button className="panel-link secondary" onClick={handleCopyLink}>
+              {copied ? "Link copied!" : "Copy link to this room"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
+}
+
+function ctaTarget(href: string): "cv" | "linkedin" | "email" {
+  if (href.startsWith("mailto:")) return "email";
+  if (href.includes("linkedin")) return "linkedin";
+  return "cv";
 }

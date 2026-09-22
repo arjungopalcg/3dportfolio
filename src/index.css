@@ -90,8 +90,10 @@ a {
 .hud-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
+  max-width: 62vw;
 }
 
 .hud-cta {
@@ -406,6 +408,87 @@ a {
   text-decoration: none;
   font-size: 0.85rem;
   font-weight: 600;
+  border: none;
+}
+
+.panel-link.secondary {
+  background: transparent;
+  border: 1px solid rgba(90, 74, 58, 0.35);
+  color: var(--warm-brown);
+}
+
+/* ---------- Settings panel ---------- */
+
+.settings-panel h2 {
+  margin: 0 0 18px;
+  font-size: 1.3rem;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(90, 74, 58, 0.15);
+  font-weight: 600;
+}
+
+.settings-row.column {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pill-toggle {
+  background: rgba(90, 74, 58, 0.12);
+  border: 1px solid rgba(90, 74, 58, 0.3);
+  color: var(--warm-brown);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
+.pill-toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff8ea;
+}
+
+.pill-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill-option {
+  background: transparent;
+  border: 1px solid rgba(90, 74, 58, 0.3);
+  color: var(--warm-brown);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pill-option.active {
+  background: var(--warm-brown);
+  border-color: var(--warm-brown);
+  color: #fff8ea;
+}
+
+.settings-hint-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 18px;
+  background: transparent;
+  border: 1px solid rgba(90, 74, 58, 0.3);
+  color: var(--warm-brown);
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
 }
 
 /* ---------- Fallback view ---------- */

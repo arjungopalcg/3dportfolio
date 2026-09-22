@@ -1,7 +1,16 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { DISTRICTS, HUB } from "../data/districts";
+import { setDocumentMeta, resetDocumentMeta } from "../utils/documentMeta";
+import { trackEvent } from "../analytics/analytics";
 
 export function FallbackView() {
+  useEffect(() => {
+    setDocumentMeta("List view", HUB.bio[0]);
+    trackEvent({ name: "fallback_view_used" });
+    return () => resetDocumentMeta();
+  }, []);
+
   return (
     <div className="fallback-view">
       <header className="fallback-header">
@@ -38,6 +47,16 @@ export function FallbackView() {
                 href={link.href}
                 target={link.href.startsWith("http") ? "_blank" : undefined}
                 rel="noreferrer"
+                onClick={() =>
+                  trackEvent({
+                    name: "cta_click",
+                    target: link.href.startsWith("mailto:")
+                      ? "email"
+                      : link.href.includes("linkedin")
+                        ? "linkedin"
+                        : "cv",
+                  })
+                }
               >
                 {link.label}
               </a>

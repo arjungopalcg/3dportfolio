@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import { districtById } from "../data/districts";
 import { useStore } from "../store/useStore";
 import { Minimap } from "./Minimap";
+import { SettingsPanel } from "./SettingsPanel";
+import { trackEvent } from "../analytics/analytics";
 
 export function HUD() {
   const muted = useStore((s) => s.settings.muted);
   const toggleMuted = useStore((s) => s.toggleMuted);
-  const reducedMotion = useStore((s) => s.settings.reducedMotion);
-  const setReducedMotion = useStore((s) => s.setReducedMotion);
+  const toggleSettings = useStore((s) => s.toggleSettings);
   const contact = districtById("contact");
 
   return (
@@ -19,11 +20,21 @@ export function HUD() {
         </div>
         <div className="hud-actions">
           {contact?.links?.[0] && (
-            <a className="hud-cta" href={contact.links[0].href}>
+            <a
+              className="hud-cta"
+              href={contact.links[0].href}
+              onClick={() => trackEvent({ name: "cta_click", target: "cv" })}
+            >
               {contact.links[0].label}
             </a>
           )}
-          <a className="hud-cta secondary" href="https://www.linkedin.com" target="_blank" rel="noreferrer">
+          <a
+            className="hud-cta secondary"
+            href="https://www.linkedin.com"
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => trackEvent({ name: "cta_click", target: "linkedin" })}
+          >
             LinkedIn
           </a>
           <Link className="hud-cta secondary" to="/fallback">
@@ -39,16 +50,16 @@ export function HUD() {
           </button>
           <button
             className="hud-icon-btn"
-            onClick={() => setReducedMotion(!reducedMotion)}
-            aria-pressed={reducedMotion}
-            aria-label="Toggle reduced motion"
-            title="Reduced motion"
+            onClick={toggleSettings}
+            aria-label="Open settings"
+            title="Settings"
           >
-            {reducedMotion ? "🧘" : "🏃"}
+            ⚙
           </button>
         </div>
       </header>
       <Minimap />
+      <SettingsPanel />
     </>
   );
 }

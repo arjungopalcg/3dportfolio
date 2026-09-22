@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { useRef } from "react";
 import { World } from "./World";
+import { PostFX } from "./PostFX";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { useLookControls } from "../hooks/useLookControls";
 import { useStore } from "../store/useStore";
@@ -20,8 +21,9 @@ export function Scene() {
         camera={{ fov: 52, near: 0.1, far: 200, position: [0, 3.6, 15] }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
       >
-        <color attach="background" args={["#e9dcc4"]} />
+        <color attach="background" args={["#cfe0d3"]} />
         <World />
+        {quality === "high" && <PostFX />}
       </Canvas>
     </div>
   );

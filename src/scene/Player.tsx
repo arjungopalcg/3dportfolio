@@ -1,11 +1,12 @@
 import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { DISTRICTS } from "../data/districts";
+import { WORLD_POINTS } from "../data/districts";
 import { useStore } from "../store/useStore";
 import { input, consumeInteract, consumeLook } from "../input/inputState";
 import { collidableMeshes } from "./collidables";
 import { playerWorld } from "./playerPosition";
+import { Toon } from "./Toon";
 
 const WORLD_RADIUS = 40;
 const BUILDING_RADIUS = 3.4;
@@ -15,9 +16,10 @@ const CAMERA_DISTANCE = 7;
 const CAMERA_HEIGHT = 3.6;
 const MOVE_SPEED = 6.5;
 
-const districtVecs = DISTRICTS.map(
+const districtVecs = WORLD_POINTS.map(
   (d) => new THREE.Vector3(d.position[0], 0, d.position[1])
 );
+const districtRadii = WORLD_POINTS.map((d) => d.collisionRadius ?? BUILDING_RADIUS);
 
 export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
   const bodyRef = useRef<THREE.Group>(null);
@@ -61,14 +63,14 @@ export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
       const next = position.current.clone().addScaledVector(moveDir, speed * dt);
 
       // Building collision (push out)
-      for (const v of districtVecs) {
+      districtVecs.forEach((v, i) => {
         const d = next.distanceTo(v);
-        const minDist = BUILDING_RADIUS + PLAYER_RADIUS;
+        const minDist = districtRadii[i] + PLAYER_RADIUS;
         if (d < minDist && d > 0.0001) {
           const push = next.clone().sub(v).normalize().multiplyScalar(minDist - d);
           next.add(push);
         }
-      }
+      });
       // World boundary
       const distFromCenter = Math.hypot(next.x, next.z);
       if (distFromCenter > WORLD_RADIUS) {
@@ -94,7 +96,7 @@ export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
     // Nearest district / interaction
     let nearestId: string | null = null;
     let nearestDist = Infinity;
-    DISTRICTS.forEach((d, i) => {
+    WORLD_POINTS.forEach((d, i) => {
       const dist = position.current.distanceTo(districtVecs[i]);
       if (dist < INTERACT_RADIUS && dist < nearestDist) {
         nearestDist = dist;
@@ -149,17 +151,17 @@ export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
       {/* body */}
       <mesh castShadow position={[0, 0.9, 0]}>
         <capsuleGeometry args={[0.42, 0.9, 4, 8]} />
-        <meshStandardMaterial color="#4a6fa5" flatShading />
+        <Toon color="#4a6fa5" />
       </mesh>
       {/* head */}
       <mesh castShadow position={[0, 1.85, 0]}>
         <sphereGeometry args={[0.32, 12, 10]} />
-        <meshStandardMaterial color="#f2c9a0" flatShading />
+        <Toon color="#f2c9a0" />
       </mesh>
       {/* hat */}
       <mesh castShadow position={[0, 2.15, 0.05]} rotation={[0.1, 0, 0]}>
         <coneGeometry args={[0.34, 0.4, 10]} />
-        <meshStandardMaterial color="#b5533f" flatShading />
+        <Toon color="#b5533f" />
       </mesh>
     </group>
   );
