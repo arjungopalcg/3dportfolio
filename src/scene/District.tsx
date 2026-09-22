@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { District as DistrictData } from "../data/districts";
 import { registerCollidable, unregisterCollidable } from "./collidables";
 import { useStore } from "../store/useStore";
-import { Toon, Glow } from "./Toon";
+import { Toon, Glow, ToonMesh } from "./Toon";
 
 interface Props {
   district: DistrictData;
@@ -49,10 +49,9 @@ function Building({ district, nearby }: Props & { nearby: boolean }) {
     case "hub":
       return (
         <group>
-          <mesh castShadow position={[0, 1.1, 0]}>
+          <ToonMesh castShadow position={[0, 1.1, 0]} color="#8a6a45">
             <cylinderGeometry args={[0.18, 0.22, 2.2, 8]} />
-            <Toon color="#8a6a45" />
-          </mesh>
+          </ToonMesh>
           <mesh castShadow position={[0, 2.5, 0]}>
             <sphereGeometry args={[0.5, 14, 12]} />
             <Glow color="#f4b79f" intensity={nearby ? 1.6 : 0.9} />
@@ -62,44 +61,37 @@ function Building({ district, nearby }: Props & { nearby: boolean }) {
     case "tower":
       return (
         <group>
-          <mesh castShadow receiveShadow position={[0, 1.5, 0]}>
+          <ToonMesh castShadow receiveShadow position={[0, 1.5, 0]} color={c}>
             <cylinderGeometry args={[1.5, 1.7, 3, 12]} />
-            <Toon color={c} />
-          </mesh>
-          <mesh castShadow position={[0, 3.6, 0]}>
+          </ToonMesh>
+          <ToonMesh castShadow position={[0, 3.6, 0]} color={a}>
             <cylinderGeometry args={[1.7, 1.7, 0.3, 12]} />
-            <Toon color={a} />
-          </mesh>
-          <mesh castShadow position={[0, 4.6, 0]}>
+          </ToonMesh>
+          <ToonMesh castShadow position={[0, 4.6, 0]} color="#7a3f3f">
             <coneGeometry args={[1.85, 1.8, 12]} />
-            <Toon color="#7a3f3f" />
-          </mesh>
+          </ToonMesh>
         </group>
       );
     case "barn":
       return (
         <group>
-          <mesh castShadow receiveShadow position={[0, 1.2, 0]}>
+          <ToonMesh castShadow receiveShadow position={[0, 1.2, 0]} color={c}>
             <boxGeometry args={[3, 2.4, 2.6]} />
-            <Toon color={c} />
-          </mesh>
-          <mesh castShadow position={[0, 2.8, 0]} rotation={[0, Math.PI / 4, 0]}>
+          </ToonMesh>
+          <ToonMesh castShadow position={[0, 2.8, 0]} rotation={[0, Math.PI / 4, 0]} color={a}>
             <coneGeometry args={[2.35, 1.4, 4]} />
-            <Toon color={a} />
-          </mesh>
+          </ToonMesh>
         </group>
       );
     case "warehouse":
       return (
         <group>
-          <mesh castShadow receiveShadow position={[0, 1.3, 0]}>
+          <ToonMesh castShadow receiveShadow position={[0, 1.3, 0]} color={c}>
             <boxGeometry args={[3.6, 2.6, 3]} />
-            <Toon color={c} />
-          </mesh>
-          <mesh castShadow position={[0, 2.75, 0]}>
+          </ToonMesh>
+          <ToonMesh castShadow position={[0, 2.75, 0]} color={a}>
             <boxGeometry args={[3.8, 0.3, 3.2]} />
-            <Toon color={a} />
-          </mesh>
+          </ToonMesh>
         </group>
       );
     case "hangar":
@@ -112,48 +104,43 @@ function Building({ district, nearby }: Props & { nearby: boolean }) {
             rotation={[0, 0, Math.PI / 2]}
           >
             <cylinderGeometry args={[1.9, 1.9, 3.2, 16, 1, false, 0, Math.PI]} />
-            <meshToonMaterial color={c} side={THREE.DoubleSide} />
+            <Toon color={c} side={THREE.DoubleSide} />
           </mesh>
-          <mesh position={[0, 1.1, -1.6]}>
+          <ToonMesh position={[0, 1.1, -1.6]} color={a}>
             <planeGeometry args={[3.8, 2.2]} />
-            <Toon color={a} />
-          </mesh>
+          </ToonMesh>
         </group>
       );
     case "ledger":
       return (
         <group>
-          <mesh castShadow receiveShadow position={[0, 1.4, 0]}>
+          <ToonMesh castShadow receiveShadow position={[0, 1.4, 0]} color={c}>
             <boxGeometry args={[2.8, 2.8, 2.6]} />
-            <Toon color={c} />
-          </mesh>
-          <mesh castShadow position={[0, 2.9, 0]}>
+          </ToonMesh>
+          <ToonMesh castShadow position={[0, 2.9, 0]} color={a}>
             <boxGeometry args={[3.1, 0.25, 2.9]} />
-            <Toon color={a} />
-          </mesh>
-          <mesh castShadow position={[0, 0.75, 1.35]}>
+          </ToonMesh>
+          <ToonMesh castShadow position={[0, 0.75, 1.35]} color="#3f2f20">
             <boxGeometry args={[0.9, 1.5, 0.1]} />
-            <Toon color="#3f2f20" />
-          </mesh>
+          </ToonMesh>
         </group>
       );
     case "grove":
       return (
         <group>
-          <mesh castShadow position={[0, 1.6, 0]}>
+          <ToonMesh castShadow position={[0, 1.6, 0]} color="#8a6a45">
             <cylinderGeometry args={[0.35, 0.45, 3.2, 8]} />
-            <Toon color="#8a6a45" />
-          </mesh>
+          </ToonMesh>
           {[0, 1, 2].map((i) => (
-            <mesh
+            <ToonMesh
               key={i}
               castShadow
               position={[0, 3.2 - i * 0.7, 0]}
               scale={[1 - i * 0.18, 0.9, 1 - i * 0.18]}
+              color={i % 2 === 0 ? c : a}
             >
               <sphereGeometry args={[1.4, 10, 8]} />
-              <Toon color={i % 2 === 0 ? c : a} />
-            </mesh>
+            </ToonMesh>
           ))}
         </group>
       );
@@ -167,34 +154,30 @@ function Building({ district, nearby }: Props & { nearby: boolean }) {
             [0, 1.3],
           ].map(([px, pz], i) => (
             <group key={i} position={[px, 0, pz]}>
-              <mesh castShadow position={[0, 0.9, 0]}>
+              <ToonMesh castShadow position={[0, 0.9, 0]} color="#5a4a3a">
                 <cylinderGeometry args={[0.12, 0.14, 1.8, 8]} />
-                <Toon color="#5a4a3a" />
-              </mesh>
+              </ToonMesh>
               <mesh castShadow position={[0, 1.9, 0]}>
                 <sphereGeometry args={[0.32, 10, 8]} />
                 <Glow color={a} intensity={0.6} />
               </mesh>
             </group>
           ))}
-          <mesh castShadow position={[0, 0.4, 0]}>
+          <ToonMesh castShadow position={[0, 0.4, 0]} color={c}>
             <cylinderGeometry args={[0.6, 0.7, 0.8, 10]} />
-            <Toon color={c} />
-          </mesh>
+          </ToonMesh>
         </group>
       );
     case "signpost":
       return (
         <group>
-          <mesh castShadow position={[0, 1.6, 0]}>
+          <ToonMesh castShadow position={[0, 1.6, 0]} color="#5a4a3a">
             <cylinderGeometry args={[0.14, 0.18, 3.2, 8]} />
-            <Toon color="#5a4a3a" />
-          </mesh>
+          </ToonMesh>
           {[0, 1, 2].map((i) => (
-            <mesh key={i} castShadow position={[0.6, 2.6 - i * 0.5, 0]}>
+            <ToonMesh key={i} castShadow position={[0.6, 2.6 - i * 0.5, 0]} color={i % 2 === 0 ? c : a}>
               <boxGeometry args={[1.3, 0.32, 0.06]} />
-              <Toon color={i % 2 === 0 ? c : a} />
-            </mesh>
+            </ToonMesh>
           ))}
         </group>
       );

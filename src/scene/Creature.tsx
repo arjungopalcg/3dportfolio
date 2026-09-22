@@ -2,7 +2,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../store/useStore";
-import { Toon } from "./Toon";
+import { ToonMesh } from "./Toon";
 
 /** A small original forest critter (not based on any existing character) that peeks out from a bush. */
 export function Creature({ position }: { position: [number, number] }) {
@@ -34,26 +34,22 @@ export function Creature({ position }: { position: [number, number] }) {
         [0.35, -0.02, 0.15, 0.4],
         [-0.32, -0.02, 0.18, 0.38],
       ].map(([bx, by, bz, r], i) => (
-        <mesh key={i} position={[bx, 0.35 + by, bz]} castShadow>
+        <ToonMesh key={i} castShadow position={[bx, 0.35 + by, bz]} color="#4f8a52">
           <sphereGeometry args={[r, 8, 7]} />
-          <Toon color="#4f8a52" />
-        </mesh>
+        </ToonMesh>
       ))}
       {/* creature, peeking from behind/above the bush */}
       <group ref={groupRef} position={[0, 0.1, 0.05]}>
-        <mesh castShadow scale={[1, 0.85, 0.9]}>
+        <ToonMesh castShadow scale={[1, 0.85, 0.9]} color="#cde3b0">
           <sphereGeometry args={[0.26, 12, 10]} />
-          <Toon color="#cde3b0" />
-        </mesh>
+        </ToonMesh>
         {/* ears */}
-        <mesh position={[-0.14, 0.24, 0]} rotation={[0, 0, 0.3]}>
+        <ToonMesh position={[-0.14, 0.24, 0]} rotation={[0, 0, 0.3]} color="#a9c98a">
           <coneGeometry args={[0.06, 0.16, 6]} />
-          <Toon color="#a9c98a" />
-        </mesh>
-        <mesh position={[0.14, 0.24, 0]} rotation={[0, 0, -0.3]}>
+        </ToonMesh>
+        <ToonMesh position={[0.14, 0.24, 0]} rotation={[0, 0, -0.3]} color="#a9c98a">
           <coneGeometry args={[0.06, 0.16, 6]} />
-          <Toon color="#a9c98a" />
-        </mesh>
+        </ToonMesh>
         {/* eyes */}
         <mesh position={[-0.1, 0.05, 0.22]}>
           <sphereGeometry args={[0.075, 8, 8]} />

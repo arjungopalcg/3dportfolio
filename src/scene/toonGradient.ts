@@ -2,10 +2,10 @@ import * as THREE from "three";
 
 let cached: THREE.DataTexture | null = null;
 
-/** A 4-step gradient ramp for banded/toon-style lighting, shared across all toon materials. */
+/** A flat, high-contrast 3-step gradient ramp for graphic-novel-style toon lighting. */
 export function getToonGradient(): THREE.DataTexture {
   if (cached) return cached;
-  const steps = new Uint8Array([60, 130, 195, 255]);
+  const steps = new Uint8Array([80, 205, 255]);
   const tex = new THREE.DataTexture(steps, steps.length, 1, THREE.RedFormat);
   tex.magFilter = THREE.NearestFilter;
   tex.minFilter = THREE.NearestFilter;

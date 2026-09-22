@@ -6,7 +6,7 @@ import { useStore } from "../store/useStore";
 import { input, consumeInteract, consumeLook } from "../input/inputState";
 import { collidableMeshes } from "./collidables";
 import { playerWorld } from "./playerPosition";
-import { Toon } from "./Toon";
+import { ToonMesh } from "./Toon";
 
 const WORLD_RADIUS = 40;
 const BUILDING_RADIUS = 3.4;
@@ -149,20 +149,17 @@ export function Player({ startYaw = Math.PI }: { startYaw?: number }) {
   return (
     <group ref={bodyRef}>
       {/* body */}
-      <mesh castShadow position={[0, 0.9, 0]}>
+      <ToonMesh castShadow position={[0, 0.9, 0]} color="#4a6fa5">
         <capsuleGeometry args={[0.42, 0.9, 4, 8]} />
-        <Toon color="#4a6fa5" />
-      </mesh>
+      </ToonMesh>
       {/* head */}
-      <mesh castShadow position={[0, 1.85, 0]}>
+      <ToonMesh castShadow position={[0, 1.85, 0]} color="#f2c9a0">
         <sphereGeometry args={[0.32, 12, 10]} />
-        <Toon color="#f2c9a0" />
-      </mesh>
+      </ToonMesh>
       {/* hat */}
-      <mesh castShadow position={[0, 2.15, 0.05]} rotation={[0.1, 0, 0]}>
+      <ToonMesh castShadow position={[0, 2.15, 0.05]} rotation={[0.1, 0, 0]} color="#b5533f">
         <coneGeometry args={[0.34, 0.4, 10]} />
-        <Toon color="#b5533f" />
-      </mesh>
+      </ToonMesh>
     </group>
   );
 }
